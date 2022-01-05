@@ -11,15 +11,18 @@ def build_corpus(data_path, make_vocab=True):
         word_list = []
         tag_list = []
         for line in f:
-            if line != '\n':
-                word, tag = line.strip('\n').split()
-                word_list.append(word)
-                tag_list.append(tag)
-            else:
+            line = line[:-1]
+            if line == "end":
                 word_lists.append(word_list)
                 tag_lists.append(tag_list)
                 word_list = []
                 tag_list = []
+            try:
+                word, tag = line.split()
+                word_list.append(word)
+                tag_list.append(tag)
+            except Exception:
+                continue
 
     # 如果make_vocab为True，还需要返回word2id和tag2id
     if make_vocab:

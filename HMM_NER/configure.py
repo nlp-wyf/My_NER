@@ -5,9 +5,8 @@ def load_config():
     CONF = {
 
         # data path
-        'train_data': './data/train.char',
-        'dev_data': './data/dev.char',
-        'test_data': './data/test.char',
+        'train_data': './data/train',
+        'dev_data': './data/dev',
 
         # save path
         'saved_path': './saved_model/hmm.pkl',
