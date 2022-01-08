@@ -2,13 +2,13 @@ import pickle
 
 
 def save_params(data):
-    with open("models/data.pkl", "wb") as fopen:
-        pickle.dump(data, fopen)
+    with open("models/data.pkl", "wb") as f:
+        pickle.dump(data, f)
 
 
 def load_params():
-    with open("models/data.pkl", "rb") as fopen:
-        data_map = pickle.load(fopen)
+    with open("models/data.pkl", "rb") as f:
+        data_map = pickle.load(f)
     return data_map
 
 

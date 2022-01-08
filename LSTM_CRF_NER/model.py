@@ -12,7 +12,7 @@ def log_sum_exp(vec):
     return result.squeeze(1)
 
 
-class BiLSTMCRF(nn.Module):
+class BiLSTM_CRF(nn.Module):
 
     def __init__(
             self,
@@ -23,7 +23,7 @@ class BiLSTMCRF(nn.Module):
             dropout=1.0,
             embedding_dim=100
     ):
-        super(BiLSTMCRF, self).__init__()
+        super(BiLSTM_CRF, self).__init__()
         if tag_map is None:
             tag_map = {"O": 0}
         self.batch_size = batch_size
@@ -85,15 +85,19 @@ class BiLSTMCRF(nn.Module):
         :param logits: [L, tag_size]
         :return:
         """
-        obs = []
+        # 有两个变量，obs和previous。previous存储前面步骤的最终结果。obs表示当前单词的信息。
         previous = torch.full((1, self.tag_size), 0)
         for index in range(len(logits)):
+            # 把previous和obs扩展成矩阵, 可以提高计算的效率
             previous = previous.expand(self.tag_size, self.tag_size).t()
             obs = logits[index].view(1, -1).expand(self.tag_size, self.tag_size)
+            # [tag_size, tag_size]
             scores = previous + obs + self.transitions
+            # [1, tag_size]
             previous = log_sum_exp(scores)
+        # [1, tag_size]
         previous = previous + self.transitions[:, self.tag_map[STOP_TAG]]
-        # calculate total_scores
+        # calculate total_scores, total_scores is a scalar
         total_scores = log_sum_exp(previous.t())[0]
         return total_scores
 
@@ -102,9 +106,9 @@ class BiLSTMCRF(nn.Module):
         logits = self.__get_lstm_features(sentences)
         real_path_score = torch.zeros(1)
         total_score = torch.zeros(1)
-        for logit, tag, leng in zip(logits, tags, length):
-            logit = logit[:leng]
-            tag = tag[:leng]
+        for logit, tag, real_len in zip(logits, tags, length):
+            logit = logit[:real_len]
+            tag = tag[:real_len]
             real_path_score += self.real_path_score(logit, tag)
             total_score += self.total_score(logit)
 
@@ -114,7 +118,7 @@ class BiLSTMCRF(nn.Module):
         """
         predict the tags of the sentences
         :param sentences: [B, L]
-        :param lengths: represent the ture length of sentence, the default is sentences.size(-1)
+        :param lengths: represent the true length of sentence, the default is sentences.size(-1)
         :return:
         """
         sentences = torch.tensor(sentences, dtype=torch.long)
@@ -124,15 +128,20 @@ class BiLSTMCRF(nn.Module):
         logits = self.__get_lstm_features(sentences)
         scores = []
         paths = []
-        for logit, leng in zip(logits, lengths):
-            logit = logit[:leng]
+        for logit, real_len in zip(logits, lengths):
+            logit = logit[:real_len]
             score, path = self.__viterbi_decode(logit)
             scores.append(score)
             paths.append(path)
         return scores, paths
 
     def __viterbi_decode(self, logits):
-        backpointers = []
+        """
+
+        :param logits: [L, tag_size]
+        :return:
+        """
+        # trellis存储历史最好得分, backpointers存储历史最好得分对应的索引
         trellis = torch.zeros(logits.size())
         backpointers = torch.zeros(logits.size(), dtype=torch.long)
 
@@ -141,6 +150,8 @@ class BiLSTMCRF(nn.Module):
             v = trellis[t - 1].unsqueeze(1).expand_as(self.transitions) + self.transitions
             trellis[t] = logits[t] + torch.max(v, 0)[0]
             backpointers[t] = torch.max(v, 0)[1]
+
+        # 回溯，求最优路径, viterbi为存放最优路径的索引列表
         viterbi = [torch.max(trellis[-1], -1)[1].cpu().tolist()]
         backpointers = backpointers.numpy()
         for bp in reversed(backpointers[1:]):

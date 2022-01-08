@@ -1,9 +1,10 @@
+import sys
 import yaml
 
 import torch
 import torch.optim as optim
 from data_manager import DataManager
-from model import BiLSTMCRF
+from model import BiLSTM_CRF
 from utils import f1_score, get_tags, format_result, save_params, load_params
 
 
@@ -27,7 +28,7 @@ class ChineseNER(object):
             dev_manager = DataManager(batch_size=30, data_type="dev")
             self.dev_batch = dev_manager.iteration()
 
-            self.model = BiLSTMCRF(
+            self.model = BiLSTM_CRF(
                 tag_map=self.train_manager.tag_map,
                 batch_size=self.batch_size,
                 vocab_size=len(self.train_manager.vocab),
@@ -42,7 +43,7 @@ class ChineseNER(object):
             self.tag_map = data_map.get("tag_map")
             self.vocab = data_map.get("vocab")
 
-            self.model = BiLSTMCRF(
+            self.model = BiLSTM_CRF(
                 tag_map=self.tag_map,
                 vocab_size=input_size,
                 embedding_dim=self.embedding_size,
@@ -84,7 +85,7 @@ class ChineseNER(object):
 
     def train(self):
         optimizer = optim.Adam(self.model.parameters())
-        for epoch in range(20):
+        for epoch in range(30):
             index = 0
             for batch in self.train_manager.get_batch():
                 index += 1
@@ -116,6 +117,7 @@ class ChineseNER(object):
     def predict(self, input_str=""):
         if not input_str:
             input_str = input("请输入文本: ")
+            # 市水务局局长吴秀波，39岁，海利装饰材料有限公司CEO。
         input_vec = [self.vocab.get(i, 0) for i in input_str]
         # convert to tensor
         sentences = torch.tensor(input_vec).view(1, -1)
@@ -125,20 +127,18 @@ class ChineseNER(object):
         for tag in self.tags:
             tags = get_tags(paths[0], tag, self.tag_map)
             entities += format_result(tags, input_str, tag)
+        # [{'start': 14, 'stop': 24, 'word': '海利装饰材料有限公司', 'type': 'ORG'},
+        #  {'start': 6, 'stop': 9, 'word': '吴秀波', 'type': 'PER'}]
         return entities
 
 
 if __name__ == "__main__":
-    # cn = ChineseNER("train")
-    # cn.train()
-    cn = ChineseNER("predict")
-    print(cn.predict())
-    # if len(sys.argv) < 2:
-    #     print("menu:\n\ttrain\n\tpredict")
-    #     exit()
-    # if sys.argv[1] == "train":
-    #     cn = ChineseNER("train")
-    #     cn.train()
-    # elif sys.argv[1] == "predict":
-    #     cn = ChineseNER("predict")
-    #     print(cn.predict())
+    if len(sys.argv) < 2:
+        print("menu:\n\ttrain\n\tpredict")
+        exit()
+    if sys.argv[1] == "train":
+        cn = ChineseNER("train")
+        cn.train()
+    elif sys.argv[1] == "predict":
+        cn = ChineseNER("predict")
+        print(cn.predict())
