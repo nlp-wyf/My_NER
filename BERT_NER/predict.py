@@ -14,10 +14,9 @@ def predict(model, sentence, mask):
 
 def run():
     MAX_LEN = 30
-    model_name = 'E:/huggingface_models/bert-base-chinese/'
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    tokenizer = BertTokenizer.from_pretrained(model_name)
+    tokenizer = BertTokenizer.from_pretrained("bert-base-chinese")
     model = Bert_BiLSTM_CRF(tag2idx).to(device)
 
     input_str = "患者9月余前因反复黑便伴腹部不适于我院消化内科住院，"
