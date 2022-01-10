@@ -3,8 +3,6 @@ import torch.nn as nn
 from transformers import BertModel
 from torchcrf import CRF
 
-model_name = 'E:/huggingface_models/bert-base-chinese/'
-
 
 class Bert_BiLSTM_CRF(nn.Module):
 
@@ -15,7 +13,7 @@ class Bert_BiLSTM_CRF(nn.Module):
         self.hidden_dim = hidden_dim
         self.embedding_dim = embedding_dim
 
-        self.bert = BertModel.from_pretrained(model_name)
+        self.bert = BertModel.from_pretrained("bert-base-chinese")
         self.lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_dim // 2,
                             num_layers=2, bidirectional=True, batch_first=True)
         self.dropout = nn.Dropout(p=0.1)
