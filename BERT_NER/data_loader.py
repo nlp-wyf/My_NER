@@ -1,9 +1,8 @@
 import torch
-from torch.utils.data import Dataset
+from torch.utils import data
 from transformers import BertTokenizer
 
-model_name = 'E:/huggingface_models/bert-base-chinese/'
-tokenizer = BertTokenizer.from_pretrained(model_name)
+tokenizer = BertTokenizer.from_pretrained("bert-base-chinese")
 VOCAB = ('<PAD>', '[CLS]', '[SEP]', 'O', 'B-BODY', 'I-TEST', 'I-EXAMINATIONS',
          'I-TREATMENT', 'B-DRUG', 'B-TREATMENT', 'I-DISEASES', 'B-EXAMINATIONS',
          'I-BODY', 'B-TEST', 'B-DISEASES', 'I-DRUG')
@@ -13,7 +12,7 @@ idx2tag = {idx: tag for idx, tag in enumerate(VOCAB)}
 MAX_LEN = 256 - 2
 
 
-class NerDataset(Dataset):
+class NerDataset(data.Dataset):
     ''' Generate our dataset '''
 
     def __init__(self, f_path):
