@@ -1,14 +1,17 @@
 import torch
 from transformers import BertTokenizer
-from model import Bert_BiLSTM_CRF
+from bert_crf import BERT_CRF
+from bert_bilstm_crf import Bert_BiLSTM_CRF
 from data_loader import idx2tag, tag2idx
 
 
 def predict(model, sentence, mask):
-    model.load_state_dict(torch.load('./ckpt/model.pt'))
+    # model.load_state_dict(torch.load('./ckpt/bert_crf.pth'))
+    model.load_state_dict(torch.load('./ckpt/bert_bilstm_crf.pth'))
     model.eval()
-    emission = model._get_features(sentence)
-    decode = model.crf.decode(emission, mask)
+    with torch.no_grad():
+        emission = model._get_features(sentence)
+        decode = model.crf.decode(emission, mask)
     return decode
 
 
@@ -17,6 +20,7 @@ def run():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     tokenizer = BertTokenizer.from_pretrained("bert-base-chinese")
+    # model = BERT_CRF(tag2idx).to(device)
     model = Bert_BiLSTM_CRF(tag2idx).to(device)
 
     input_str = "患者9月余前因反复黑便伴腹部不适于我院消化内科住院，"

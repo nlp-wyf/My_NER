@@ -1,11 +1,13 @@
 import torch
 from torch.utils import data
 import os
+from tqdm import tqdm
 import warnings
 import argparse
 import numpy as np
 from sklearn import metrics
-from model import Bert_BiLSTM_CRF
+from bert_crf import BERT_CRF
+from bert_bilstm_crf import Bert_BiLSTM_CRF
 from transformers import AdamW, get_linear_schedule_with_warmup
 from data_loader import NerDataset, PadBatch, VOCAB, tag2idx, idx2tag
 
@@ -17,7 +19,7 @@ def train(e, model, iterator, optimizer, scheduler, device):
     model.train()
     losses = 0.0
     step = 0
-    for i, batch in enumerate(iterator):
+    for i, batch in enumerate(tqdm(iterator)):
         step += 1
 
         tokens, labels, mask = batch
@@ -42,7 +44,7 @@ def validate(e, model, iterator, device):
     losses = 0
     step = 0
     with torch.no_grad():
-        for i, batch in enumerate(iterator):
+        for i, batch in enumerate(tqdm(iterator)):
             step += 1
 
             tokens, labels, mask = batch
@@ -70,11 +72,11 @@ def validate(e, model, iterator, device):
 
 
 def test(model, iterator, device):
-    model.load_state_dict(torch.load('./ckpt/model.pt'))
+    model.load_state_dict(torch.load('./ckpt/bert_bilstm_crf.pth'))
     model.eval()
     Y, Y_hat = [], []
     with torch.no_grad():
-        for i, batch in enumerate(iterator):
+        for i, batch in enumerate(tqdm(iterator)):
             tokens, labels, mask = batch
             tokens = tokens.to(device)
             labels = labels.to(device)
@@ -122,6 +124,7 @@ def run():
 
     ner = parser.parse_args()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    # model = BERT_CRF(tag2idx).to(device)
     model = Bert_BiLSTM_CRF(tag2idx).to(device)
 
     print('Initial model Done.')
@@ -170,7 +173,7 @@ def run():
         if loss < _best_val_loss and acc > _best_val_acc:
             _best_val_loss = loss
             _best_val_acc = acc
-            torch.save(candidate_model.state_dict(), "./ckpt/model.pt")
+            torch.save(candidate_model.state_dict(), "./ckpt/bert_bilstm_crf.pth")
 
         print("=============================================")
 
